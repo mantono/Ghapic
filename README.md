@@ -1,2 +1,2 @@
 # Ghapic
-Minimalistic GitHub API client written in Java
+Minimalistic **G**it**H**ub **API c**lient written in Java
