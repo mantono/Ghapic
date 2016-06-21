@@ -14,6 +14,8 @@ public class Request
 		this.method = method;
 		if(resource.contains(API_URL))
 			resource = resource.replaceAll(API_URL, "");
+		else if(resource.charAt(0) != '/')
+			resource = "/" + resource;
 		this.url = new URL(API_URL + resource);
 	}
 
