@@ -1,8 +1,12 @@
 package com.mantono.ghapic;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -21,7 +25,7 @@ public class RequestConsumer implements Callable<String>
 	}
 
 	@Override
-	public String call() throws Exception
+	public Response call() throws Exception
 	{
 		limit.sleep();
 		HttpsURLConnection connection = null;
@@ -36,6 +40,10 @@ public class RequestConsumer implements Callable<String>
 			
 			connection.connect();
 			
+			final Map<String, String> header = extractHeader(connection);
+			final List<String> body = parseBody(connection);
+			return new Response(header, body);
+			
 			final String rateLimitRemaining = connection.getHeaderField("X-RateLimit-Remaining");
 			final int remaining = Integer.parseInt(rateLimitRemaining);
 			limit.setRemaining(remaining);
@@ -44,15 +52,7 @@ public class RequestConsumer implements Callable<String>
 			final int time = Integer.parseInt(resetTime);
 			limit.setResetTime(time);
 			
-			InputStream is = connection.getInputStream();
-			BufferedReader rd = new BufferedReader(new InputStreamReader(is));
-			StringBuilder response = new StringBuilder();
-			String line;
-			while((line = rd.readLine()) != null)
-			{
-				response.append(line);
-				response.append('\r');
-			}
+
 			rd.close();
 			return response.toString();
 		}
@@ -63,5 +63,31 @@ public class RequestConsumer implements Callable<String>
 				connection.disconnect();
 			}
 		}
+	}
+
+	private List<String> parseBody(HttpsURLConnection connection)
+	{
+		
+		try(InputStream is = connection.getInputStream();)
+		{
+			BufferedReader rd = new BufferedReader(new InputStreamReader(is));
+			List<String> body = new ArrayList<String>(); 
+			String line;
+			while((line = rd.readLine()) != null)
+				body.add(line);
+
+			return body;
+		}
+		catch(IOException e)
+		{
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	private Map<String, String> extractHeader(HttpsURLConnection connection)
+	{
+		// TODO Auto-generated method stub
+		return null;
 	}
 }
