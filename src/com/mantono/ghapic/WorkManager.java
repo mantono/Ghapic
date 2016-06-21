@@ -71,7 +71,6 @@ public class WorkManager extends ThreadPoolExecutor
 	private long sleep()
 	{
 		final long sleep = sleepTime();
-		System.out.println(sleep);
 		try
 		{
 			if(sleep > 0)
