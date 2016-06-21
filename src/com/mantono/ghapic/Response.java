@@ -6,23 +6,23 @@ import java.util.Map;
 
 public class Response
 {
-	private final Map<String, String> headerFields;
+	private final Map<String, List<String>> headerFields;
 	private final List<String> body;
 	
-	public Response(final Map<String, String> header, final List<String> body)
+	public Response(final Map<String, List<String>> header, final List<String> body)
 	{
-		this.headerFields = Collections.unmodifiableMap(header);
+		this.headerFields = header;
 		this.body = body;
 	}
 	
-	public Map<String, String> getHeader()
+	public Map<String, List<String>> getHeader()
 	{
-		return headerFields;
+		return Collections.unmodifiableMap(headerFields);
 	}
 	
 	public String getHeaderField(final String field)
 	{
-		return headerFields.get(field);
+		return headerFields.get(field).get(0);
 	}
 	
 	public List<String> getBody()

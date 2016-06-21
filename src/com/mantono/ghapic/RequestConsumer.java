@@ -11,15 +11,13 @@ import java.util.concurrent.Callable;
 
 import javax.net.ssl.HttpsURLConnection;
 
-public class RequestConsumer implements Callable<String>
+public class RequestConsumer implements Callable<Response>
 {
 	private final Request request;
 	private final String accessToken;
-	private final Limit limit;
 
-	public RequestConsumer(final Limit limit, final String token, final Request request)
+	public RequestConsumer(final String token, final Request request)
 	{
-		this.limit = limit;
 		this.accessToken = token;
 		this.request = request;
 	}
@@ -27,7 +25,6 @@ public class RequestConsumer implements Callable<String>
 	@Override
 	public Response call() throws Exception
 	{
-		limit.sleep();
 		HttpsURLConnection connection = null;
 		try
 		{
@@ -40,21 +37,9 @@ public class RequestConsumer implements Callable<String>
 			
 			connection.connect();
 			
-			final Map<String, String> header = extractHeader(connection);
+			final Map<String, List<String>> header = extractHeader(connection);
 			final List<String> body = parseBody(connection);
 			return new Response(header, body);
-			
-			final String rateLimitRemaining = connection.getHeaderField("X-RateLimit-Remaining");
-			final int remaining = Integer.parseInt(rateLimitRemaining);
-			limit.setRemaining(remaining);
-			
-			final String resetTime = connection.getHeaderField("X-RateLimit-Reset");
-			final int time = Integer.parseInt(resetTime);
-			limit.setResetTime(time);
-			
-
-			rd.close();
-			return response.toString();
 		}
 		finally
 		{
@@ -85,9 +70,8 @@ public class RequestConsumer implements Callable<String>
 		return null;
 	}
 
-	private Map<String, String> extractHeader(HttpsURLConnection connection)
+	private Map<String, List<String>> extractHeader(HttpsURLConnection connection)
 	{
-		// TODO Auto-generated method stub
-		return null;
+		return connection.getHeaderFields();
 	}
 }

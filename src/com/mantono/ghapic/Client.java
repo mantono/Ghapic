@@ -10,26 +10,34 @@ import java.util.concurrent.TimeUnit;
 
 public class Client
 {
-	private final ThreadPoolExecutor threadPool;
+	private final WorkManager threadPool;
 	private final String accessToken;
-	private final Limit limit;
 	
 	public Client(final String accessToken)
 	{
-		final BlockingQueue<Runnable> workQueue = new ArrayBlockingQueue<Runnable>(50);
-		this.threadPool = new ThreadPoolExecutor(2, 12, 2500, TimeUnit.MILLISECONDS, workQueue);
-		this.limit = new Limit(accessToken, workQueue);
+		final BlockingQueue<Runnable> workQueue = new ArrayBlockingQueue<Runnable>(100);
+		this.threadPool = new WorkManager(2, 12, 2500, TimeUnit.MILLISECONDS, workQueue);
 		this.accessToken = accessToken;
 	}
 	
-	public Future<String> submitRequest(final Verb method, final String resource) throws MalformedURLException, IOException
+	public boolean acceptsRequests()
+	{
+		return !threadPool.limitIsReached();
+	}
+	
+	public Future<Response> submitRequest(final String resource) throws MalformedURLException, IOException
+	{
+		return submitRequest(new Request(Verb.GET, resource));
+	}
+	
+	public Future<Response> submitRequest(final Verb method, final String resource) throws MalformedURLException, IOException
 	{
 		return submitRequest(new Request(method, resource));
 	}
 	
-	public Future<String> submitRequest(final Request request) throws IOException
+	public Future<Response> submitRequest(final Request request) throws IOException
 	{
-		final RequestConsumer consumer = new RequestConsumer(limit, accessToken, request);
+		final RequestConsumer consumer = new RequestConsumer(accessToken, request);
 		return threadPool.submit(consumer);
 	}
 }

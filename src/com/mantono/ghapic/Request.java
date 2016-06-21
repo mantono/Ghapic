@@ -5,7 +5,7 @@ import java.net.URL;
 
 public class Request
 {
-	public final static String API_URL = "https://api.github.com/";
+	public final static String API_URL = "https://api.github.com";
 	private final Verb method;
 	private final URL url;
 	
