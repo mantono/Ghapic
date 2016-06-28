@@ -28,7 +28,8 @@ public class RequestCache
 		{
 			permission.acquire();
 			cachedResponses.put(request, response);
-			return cacheTimestamps.put(request, System.currentTimeMillis());
+			if(cacheTimestamps.containsKey(request))
+				return cacheTimestamps.put(request, System.currentTimeMillis());
 		}
 		catch(InterruptedException exception)
 		{
