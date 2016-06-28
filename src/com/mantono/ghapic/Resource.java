@@ -3,7 +3,7 @@ package com.mantono.ghapic;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-public class Resource
+public class Resource implements Request
 {
 	public final static String API_URL = "https://api.github.com";
 	private final Verb method;
@@ -19,11 +19,13 @@ public class Resource
 		this.url = new URL(API_URL + resource);
 	}
 
+	@Override
 	public Verb getMethod()
 	{
 		return method;
 	}
 	
+	@Override
 	public URL getUrl()
 	{
 		return url;

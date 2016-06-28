@@ -12,13 +12,13 @@ import java.util.concurrent.TimeUnit;
 public class WorkManager extends ThreadPoolExecutor
 {
 	public static final int HOURLY_RATE = 5000;
-	public static final int HOURLY_SEARCH_RATE = 30;
+	public static final int MINUTE_SEARCH_RATE = 30;
+	private final BlockingQueue<Runnable> workQueue;
+	private final RequestCache cache;
 	private Instant limitResetTime = Instant.now();
 	private Instant limitSearchResetTime = Instant.now();
 	private int remainingRequests = HOURLY_RATE;
-	private int remainingSearchRequests = HOURLY_SEARCH_RATE;
-	private final BlockingQueue<Runnable> workQueue;
-	private final RequestCache cache;
+	private int remainingSearchRequests = MINUTE_SEARCH_RATE;
 
 	public WorkManager(final int corePoolSize, final int maximumPoolSize, final long keepAliveTime, final TimeUnit unit, BlockingQueue<Runnable> workQueue)
 	{
@@ -32,7 +32,7 @@ public class WorkManager extends ThreadPoolExecutor
 	{
 		super.beforeExecute(t, r);
 		sleep();
-		while(limitIsReached())
+		while(limitIsReached() || searchLimitIsReached())
 			Thread.yield();
 	}
 	
@@ -64,7 +64,7 @@ public class WorkManager extends ThreadPoolExecutor
 				this.remainingRequests = remaining;
 				setResetTime(time);
 			}
-			else if(rateLimit == HOURLY_SEARCH_RATE)
+			else if(rateLimit == MINUTE_SEARCH_RATE)
 			{
 				this.remainingSearchRequests = remaining;
 				setSearchResetTime(time);
@@ -108,7 +108,7 @@ public class WorkManager extends ThreadPoolExecutor
 	
 	public int consumedSearchRequests()
 	{
-		return HOURLY_SEARCH_RATE - remainingSearchRequests;
+		return MINUTE_SEARCH_RATE - remainingSearchRequests;
 	}
 	
 	public int remainingRequests()
@@ -163,5 +163,4 @@ public class WorkManager extends ThreadPoolExecutor
 	{
 		this.limitSearchResetTime = Instant.ofEpochSecond(time);
 	}
-
 }

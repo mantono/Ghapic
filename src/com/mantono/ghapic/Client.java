@@ -14,6 +14,9 @@ public class Client
 {
 	private final WorkManager threadPool;
 	private final String accessToken;
+	private final RequestCache cache;
+	private CachePolicy cachePolicy = CachePolicy.NEVER;
+	private int cacheThreshold;
 
 	public Client()
 	{
@@ -91,17 +94,52 @@ public class Client
 	
 	public Future<Response> submitRequest(final String resource) throws MalformedURLException, IOException
 	{
-		return submitRequest(new Request(Verb.GET, resource));
+		return submitRequest(new Resource(Verb.GET, resource));
 	}
 	
 	public Future<Response> submitRequest(final Verb method, final String resource) throws MalformedURLException, IOException
 	{
-		return submitRequest(new Request(method, resource));
+		return submitRequest(new Resource(method, resource));
 	}
 	
 	public Future<Response> submitRequest(final Request request) throws IOException
 	{
 		final RequestConsumer consumer = new RequestConsumer(accessToken, request);
-		return threadPool.submit(consumer);
+		
+		final boolean alwaysCache = cachePolicy == CachePolicy.ALWAYS;
+		final boolean cacheThresholdReached = cachePolicy == CachePolicy.THRESHOLD && threadPool.remainingRequests() < cacheThreshold;
+		final boolean saveToCache = cachePolicy != CachePolicy.NEVER;
+
+		if(alwaysCache || cacheThresholdReached)
+			if(cache.isCached(request))
+				return cache.getResponse(request);
+
+		Future<Response> response = threadPool.submit(consumer);
+		
+		if(saveToCache)
+			cache.save(request, response);
+
+		return response;
+
+	}
+
+	public CachePolicy getCachePolicy()
+	{
+		return cachePolicy;
+	}
+
+	public void setCachePolicy(CachePolicy cachePolicy)
+	{
+		this.cachePolicy = cachePolicy;
+	}
+	
+	public void setCacheThreshold(final int cacheThreshold)
+	{
+		this.cacheThreshold = cacheThreshold;
+	}
+	
+	public int getCacheThreshold()
+	{
+		return cacheThreshold;
 	}
 }

@@ -6,23 +6,23 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.Spliterator;
+import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 public class RequestCache
 {
-	private final Map<Request, Response> cachedResponses;
+	private final Map<Request, Future<Response>> cachedResponses;
 	private final Map<Request, Long> cacheTimestamps;
 	private final Semaphore permission = new Semaphore(1);
 
 	public RequestCache()
 	{
-		this.cachedResponses = new HashMap<Request, Response>(100);
+		this.cachedResponses = new HashMap<Request, Future<Response>>(100);
 		this.cacheTimestamps = new HashMap<Request, Long>(100);
 	}
 
-	public long save(final Request request, final Response response)
+	public long save(final Request request, final Future<Response> response)
 	{
 		try
 		{
@@ -42,19 +42,19 @@ public class RequestCache
 		return -1;
 	}
 
-	public Response getResponse(final Request request)
+	public Future<Response> getResponse(final Request request)
 	{
 		return cachedResponses.get(request);
 	}
 
-	public boolean cacheExists(final Request request)
+	public boolean isCached(final Request request)
 	{
 		return cachedResponses.containsKey(request);
 	}
 
-	public boolean cacheExists(final Request request, final long maxAge, final TimeUnit time)
+	public boolean isCached(final Request request, final long maxAge, final TimeUnit time)
 	{
-		if(!cacheExists(request))
+		if(!isCached(request))
 			return false;
 
 		final long now = System.currentTimeMillis();
