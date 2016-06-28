@@ -12,8 +12,11 @@ import java.util.concurrent.TimeUnit;
 public class WorkManager extends ThreadPoolExecutor
 {
 	public static final int HOURLY_RATE = 5000;
+	public static final int HOURLY_SEARCH_RATE = 30;
 	private Instant limitResetTime = Instant.now();
+	private Instant limitSearchResetTime = Instant.now();
 	private int remainingRequests = HOURLY_RATE;
+	private int remainingSearchRequests = HOURLY_SEARCH_RATE;
 	private final BlockingQueue<Runnable> workQueue;
 
 	public WorkManager(final int corePoolSize, final int maximumPoolSize, final long keepAliveTime, final TimeUnit unit, BlockingQueue<Runnable> workQueue)
@@ -48,10 +51,23 @@ public class WorkManager extends ThreadPoolExecutor
 			
 			Response response = (Response) obj;
 			
-			this.remainingRequests = Integer.parseInt(response.getHeaderField("X-RateLimit-Remaining"));
+			final int rateLimit = Integer.parseInt(response.getHeaderField("X-RateLimit-Limit"));
+			
+			final int remaining = Integer.parseInt(response.getHeaderField("X-RateLimit-Remaining"));
 			final String resetTime = response.getHeaderField("X-RateLimit-Reset");
 			final long time = Long.parseLong(resetTime);
-			setResetTime(time);
+			
+			if(rateLimit == HOURLY_RATE)
+			{
+				this.remainingRequests = remaining;
+				setResetTime(time);
+			}
+			else if(rateLimit == HOURLY_SEARCH_RATE)
+			{
+				this.remainingSearchRequests = remaining;
+				setSearchResetTime(time);
+			}
+		
 		}
 		catch(InterruptedException e)
 		{
@@ -88,9 +104,19 @@ public class WorkManager extends ThreadPoolExecutor
 		return HOURLY_RATE - remainingRequests;
 	}
 	
+	public int consumedSearchRequests()
+	{
+		return HOURLY_SEARCH_RATE - remainingSearchRequests;
+	}
+	
 	public int remainingRequests()
 	{
 		return remainingRequests;
+	}
+	
+	public int remainingSearchRequests()
+	{
+		return remainingSearchRequests;
 	}
 	
 	public int pendingRequests()
@@ -103,6 +129,11 @@ public class WorkManager extends ThreadPoolExecutor
 		return remainingRequests() - pendingRequests() < 20;
 	}
 	
+	public boolean searchLimitIsReached()
+	{
+		return remainingSearchRequests() < 1;
+	}
+	
 	/**
 	 * 
 	 * @return the amount of seconds until the rate limit resets.
@@ -112,9 +143,23 @@ public class WorkManager extends ThreadPoolExecutor
 		return Instant.now().until(limitResetTime, (TemporalUnit) ChronoUnit.SECONDS);
 	}
 	
+	/**
+	 * 
+	 * @return the amount of seconds until the rate limit for searches resets.
+	 */
+	public long timeUntilSearchReset()
+	{
+		return Instant.now().until(limitSearchResetTime, (TemporalUnit) ChronoUnit.SECONDS);
+	}
+	
 	private void setResetTime(long time)
 	{
 		this.limitResetTime = Instant.ofEpochSecond(time);
+	}
+	
+	private void setSearchResetTime(long time)
+	{
+		this.limitSearchResetTime = Instant.ofEpochSecond(time);
 	}
 
 }
