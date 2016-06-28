@@ -14,6 +14,16 @@ public class Client
 {
 	private final WorkManager threadPool;
 	private final String accessToken;
+
+	public Client()
+	{
+		this(findAccessToken());
+	}
+
+	public Client(final File tokenFile)
+	{
+		this(readTokenFromFile(tokenFile));		
+	}
 	
 	public Client(final String accessToken)
 	{
@@ -21,44 +31,31 @@ public class Client
 		this.accessToken = accessToken;
 		final BlockingQueue<Runnable> workQueue = new ArrayBlockingQueue<Runnable>(100);
 		this.threadPool = new WorkManager(2, 12, 2500, TimeUnit.MILLISECONDS, workQueue);
-	}
-	
-	public Client(final File tokenFile)
-	{
-		final String fileToken = readTokenFromFile(tokenFile);
-		this.accessToken = fileToken;
-		checkAccessTokenFormat(accessToken);
-		final BlockingQueue<Runnable> workQueue = new ArrayBlockingQueue<Runnable>(100);
-		this.threadPool = new WorkManager(2, 12, 2500, TimeUnit.MILLISECONDS, workQueue);
-		
+		this.cache = new RequestCache();
 	}
 
-	public Client()
+	public Client(final CachePolicy policy)
+	{
+		this();
+		this.cachePolicy = policy;
+	}
+
+	private static String findAccessToken()
 	{
 		final String envToken = System.getenv("GITHUB_API_TOKEN");
 
 		if(envToken != null)
-		{
-			this.accessToken = envToken;
-		}
+			return envToken;
 		else
-		{
-			final String fileToken = readTokenFromFile();
-			this.accessToken = fileToken;
-		}
-		
-		checkAccessTokenFormat(accessToken);
-		
-		final BlockingQueue<Runnable> workQueue = new ArrayBlockingQueue<Runnable>(100);
-		this.threadPool = new WorkManager(2, 12, 2500, TimeUnit.MILLISECONDS, workQueue);
+			return readTokenFromFile();
 	}
 
-	private String readTokenFromFile()
+	private static String readTokenFromFile()
 	{
 		return readTokenFromFile(new File(".token"));
 	}
 
-	private String readTokenFromFile(final File file)
+	private static String readTokenFromFile(final File file)
 	{
 		try(final FileReader fileReader = new FileReader(file))
 		{
@@ -77,7 +74,7 @@ public class Client
 		return "BadToken";
 	}
 	
-	private void checkAccessTokenFormat(String accessToken)
+	private static void checkAccessTokenFormat(String accessToken)
 	{
 		if(!accessToken.matches("[\\da-f]{40}"))
 		{
