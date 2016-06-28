@@ -18,11 +18,13 @@ public class WorkManager extends ThreadPoolExecutor
 	private int remainingRequests = HOURLY_RATE;
 	private int remainingSearchRequests = HOURLY_SEARCH_RATE;
 	private final BlockingQueue<Runnable> workQueue;
+	private final RequestCache cache;
 
 	public WorkManager(final int corePoolSize, final int maximumPoolSize, final long keepAliveTime, final TimeUnit unit, BlockingQueue<Runnable> workQueue)
 	{
 		super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue);
 		this.workQueue = workQueue;
+		this.cache = new RequestCache();
 	}
 	
 	@Override
