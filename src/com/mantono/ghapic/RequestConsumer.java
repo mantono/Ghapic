@@ -11,6 +11,9 @@ import java.util.concurrent.Callable;
 
 import javax.net.ssl.HttpsURLConnection;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 public class RequestConsumer implements Callable<Response>
 {
 	private final Request request;
@@ -38,7 +41,7 @@ public class RequestConsumer implements Callable<Response>
 			connection.connect();
 			
 			final Map<String, List<String>> header = extractHeader(connection);
-			final List<String> body = parseBody(connection);
+			final JsonNode body = parseBody(connection);
 			return new Response(header, body);
 		}
 		finally
@@ -50,18 +53,14 @@ public class RequestConsumer implements Callable<Response>
 		}
 	}
 
-	private List<String> parseBody(HttpsURLConnection connection)
+	private JsonNode parseBody(HttpsURLConnection connection)
 	{
 		
-		try(InputStream is = connection.getInputStream();)
+		try(InputStream input = connection.getInputStream();)
 		{
-			BufferedReader rd = new BufferedReader(new InputStreamReader(is));
-			List<String> body = new ArrayList<String>(); 
-			String line;
-			while((line = rd.readLine()) != null)
-				body.add(line);
-
-			return body;
+			final ObjectMapper mapper = new ObjectMapper();
+			final JsonNode node = mapper.readTree(input);
+			return node;
 		}
 		catch(IOException e)
 		{

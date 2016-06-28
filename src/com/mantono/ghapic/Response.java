@@ -4,12 +4,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 public class Response
 {
 	private final Map<String, List<String>> headerFields;
-	private final List<String> body;
+	private final JsonNode body;
 	
-	public Response(final Map<String, List<String>> header, final List<String> body)
+	public Response(final Map<String, List<String>> header, final JsonNode body)
 	{
 		this.headerFields = header;
 		this.body = body;
@@ -25,7 +27,7 @@ public class Response
 		return headerFields.get(field).get(0);
 	}
 	
-	public List<String> getBody()
+	public JsonNode getBody()
 	{
 		return body;
 	}
