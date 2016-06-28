@@ -3,13 +3,13 @@ package com.mantono.ghapic;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-public class Request
+public class Resource
 {
 	public final static String API_URL = "https://api.github.com";
 	private final Verb method;
 	private final URL url;
 	
-	public Request(Verb method, String resource) throws MalformedURLException
+	public Resource(Verb method, String resource) throws MalformedURLException
 	{
 		this.method = method;
 		if(resource.contains(API_URL))
