@@ -14,9 +14,8 @@ public class Client
 {
 	private final WorkManager threadPool;
 	private final String accessToken;
-	private final RequestCache cache;
-	private CachePolicy cachePolicy = CachePolicy.NEVER;
-	private int cacheThreshold;
+	private final RequestCache resourceCache, searchCache;
+	private CacheSettings cache;
 
 	public Client()
 	{
@@ -25,22 +24,24 @@ public class Client
 
 	public Client(final File tokenFile)
 	{
-		this(readTokenFromFile(tokenFile));		
+		this(readTokenFromFile(tokenFile));
 	}
-	
+
 	public Client(final String accessToken)
 	{
 		checkAccessTokenFormat(accessToken);
 		this.accessToken = accessToken;
 		final BlockingQueue<Runnable> workQueue = new ArrayBlockingQueue<Runnable>(100);
 		this.threadPool = new WorkManager(2, 12, 2500, TimeUnit.MILLISECONDS, workQueue);
-		this.cache = new RequestCache();
+		this.resourceCache = new RequestCache();
+		this.searchCache = new RequestCache();
+		this.cache = new CacheSettings();
 	}
 
-	public Client(final CachePolicy policy)
+	public Client(final CacheSettings cache)
 	{
 		this();
-		this.cachePolicy = policy;
+		this.cache = cache;
 	}
 
 	private static String findAccessToken()
@@ -76,14 +77,13 @@ public class Client
 
 		return "BadToken";
 	}
-	
+
 	private static void checkAccessTokenFormat(String accessToken)
 	{
 		if(!accessToken.matches("[\\da-f]{40}"))
 		{
-			throw new IllegalArgumentException(
-					"Bad token format, expected hexadecimal token of length 40, but got: "
-							+ accessToken + " (length " + accessToken.length() + ")");
+			throw new IllegalArgumentException("Bad token format, expected hexadecimal token of length 40, but got: "
+					+ accessToken + " (length " + accessToken.length() + ")");
 		}
 	}
 
@@ -91,55 +91,74 @@ public class Client
 	{
 		return !threadPool.limitIsReached();
 	}
-	
+
 	public Future<Response> submitRequest(final String resource) throws MalformedURLException, IOException
 	{
+		if(resource.matches("^/?search/"))
+			throw new IllegalArgumentException("A search query was done, but only regular resouce requests are allowed.");
 		return submitRequest(new Resource(Verb.GET, resource));
 	}
-	
+
 	public Future<Response> submitRequest(final Verb method, final String resource) throws MalformedURLException, IOException
 	{
+		if(resource.matches("^/?search/"))
+			throw new IllegalArgumentException("A search query was done, but only regular resouce requests are allowed.");
 		return submitRequest(new Resource(method, resource));
 	}
 	
-	public Future<Response> submitRequest(final Request request) throws IOException
+	public Future<Response> submitRequest(final SearchType type, final String query) throws MalformedURLException, IOException
 	{
-		final RequestConsumer consumer = new RequestConsumer(accessToken, request);
-		
-		final boolean alwaysCache = cachePolicy == CachePolicy.ALWAYS;
-		final boolean cacheThresholdReached = cachePolicy == CachePolicy.THRESHOLD && threadPool.remainingRequests() < cacheThreshold;
-		final boolean saveToCache = cachePolicy != CachePolicy.NEVER;
+		return submitRequest(new Search(type, query));
+	}
 
-		if(alwaysCache || cacheThresholdReached)
-			if(cache.isCached(request))
-				return cache.getResponse(request);
+	public Future<Response> submitRequest(final Resource resource) throws IOException
+	{
+		if(useResourceCache())
+			if(resourceCache.isCached(resource))
+				return resourceCache.getResponse(resource);
 
+		final RequestConsumer consumer = new RequestConsumer(accessToken, resource);
 		Future<Response> response = threadPool.submit(consumer);
-		
+
+		final boolean saveToCache = cache.resourcePolicy() != CachePolicy.NEVER;
+
 		if(saveToCache)
-			cache.save(request, response);
+			resourceCache.save(resource, response);
 
 		return response;
 
 	}
 
-	public CachePolicy getCachePolicy()
+	public Future<Response> submitRequest(final Search query) throws IOException
 	{
-		return cachePolicy;
+		if(useSearchCache())
+			if(searchCache.isCached(query))
+				return searchCache.getResponse(query);
+
+		final RequestConsumer consumer = new RequestConsumer(accessToken, query);
+		Future<Response> response = threadPool.submit(consumer);
+
+		final boolean saveToCache = cache.searchPolicy() != CachePolicy.NEVER;
+
+		if(saveToCache)
+			searchCache.save(query, response);
+
+		return response;
 	}
 
-	public void setCachePolicy(CachePolicy cachePolicy)
+	private boolean useResourceCache()
 	{
-		this.cachePolicy = cachePolicy;
+		final boolean alwaysCache = cache.resourcePolicy() == CachePolicy.ALWAYS;
+		final boolean cacheThresholdReached = cache.resourcePolicy() == CachePolicy.THRESHOLD
+				&& threadPool.remainingResourceRequests() < cache.resourceThreshold();
+		return alwaysCache || cacheThresholdReached;
 	}
-	
-	public void setCacheThreshold(final int cacheThreshold)
+
+	private boolean useSearchCache()
 	{
-		this.cacheThreshold = cacheThreshold;
-	}
-	
-	public int getCacheThreshold()
-	{
-		return cacheThreshold;
+		final boolean alwaysCache = cache.searchPolicy() == CachePolicy.ALWAYS;
+		final boolean cacheThresholdReached = cache.searchPolicy() == CachePolicy.THRESHOLD
+				&& threadPool.remainingSearchRequests() < cache.searchThreshold();
+		return alwaysCache || cacheThresholdReached;
 	}
 }

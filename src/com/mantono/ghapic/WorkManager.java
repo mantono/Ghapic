@@ -14,7 +14,6 @@ public class WorkManager extends ThreadPoolExecutor
 	public static final int HOURLY_RATE = 5000;
 	public static final int MINUTE_SEARCH_RATE = 30;
 	private final BlockingQueue<Runnable> workQueue;
-	private final RequestCache cache;
 	private Instant limitResetTime = Instant.now();
 	private Instant limitSearchResetTime = Instant.now();
 	private int remainingRequests = HOURLY_RATE;
@@ -24,7 +23,6 @@ public class WorkManager extends ThreadPoolExecutor
 	{
 		super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue);
 		this.workQueue = workQueue;
-		this.cache = new RequestCache();
 	}
 	
 	@Override
@@ -83,7 +81,7 @@ public class WorkManager extends ThreadPoolExecutor
 
 	private long sleepTime()
 	{
-		return 5300/(remainingRequests() - pendingRequests());
+		return 5300/(remainingResourceRequests() - pendingRequests());
 	}
 	
 	private long sleep()
@@ -111,7 +109,7 @@ public class WorkManager extends ThreadPoolExecutor
 		return MINUTE_SEARCH_RATE - remainingSearchRequests;
 	}
 	
-	public int remainingRequests()
+	public int remainingResourceRequests()
 	{
 		return remainingRequests;
 	}
@@ -128,7 +126,7 @@ public class WorkManager extends ThreadPoolExecutor
 	
 	public boolean limitIsReached()
 	{
-		return remainingRequests() - pendingRequests() < 20;
+		return remainingResourceRequests() - pendingRequests() < 20;
 	}
 	
 	public boolean searchLimitIsReached()
