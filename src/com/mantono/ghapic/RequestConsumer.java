@@ -14,9 +14,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class RequestConsumer implements Callable<Response>
 {
 	private final Request request;
-	private final String accessToken;
+	private final AccessToken accessToken;
 
-	public RequestConsumer(final String token, final Request request)
+	public RequestConsumer(final AccessToken token, final Request request)
 	{
 		this.accessToken = token;
 		this.request = request;
@@ -30,7 +30,7 @@ public class RequestConsumer implements Callable<Response>
 		{
 			connection = (HttpsURLConnection) request.getUrl().openConnection();
 			connection.setRequestMethod(request.getMethod().name());
-			connection.setRequestProperty("Authorization", "token " + accessToken);
+			connection.setRequestProperty("Authorization", "token " + accessToken.getToken());
 			connection.setRequestProperty("User-Agent", "ghapic");
 			connection.setRequestProperty("Accept", "application/vnd.github.v3.text+json");
 			connection.setDoOutput(true);

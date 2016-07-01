@@ -13,24 +13,15 @@ import java.util.concurrent.TimeUnit;
 public class Client
 {
 	private final WorkManager threadPool;
-	private final String accessToken;
+	private final AccessToken token;
 	private final RequestCache resourceCache, searchCache;
 	private CacheSettings cache;
 
-	public Client()
-	{
-		this(findAccessToken());
-	}
 
-	public Client(final File tokenFile)
-	{
-		this(readTokenFromFile(tokenFile));
-	}
 
-	public Client(final String accessToken)
+	public Client(final AccessToken token)
 	{
-		checkAccessTokenFormat(accessToken);
-		this.accessToken = accessToken;
+		this.token = token;
 		final BlockingQueue<Runnable> workQueue = new ArrayBlockingQueue<Runnable>(100);
 		this.threadPool = new WorkManager(2, 12, 2500, TimeUnit.MILLISECONDS, workQueue);
 		this.resourceCache = new RequestCache();
@@ -40,51 +31,8 @@ public class Client
 
 	public Client(final CacheSettings cache)
 	{
-		this();
+		this(new AccessToken());
 		this.cache = cache;
-	}
-
-	private static String findAccessToken()
-	{
-		final String envToken = System.getenv("GITHUB_API_TOKEN");
-
-		if(envToken != null)
-			return envToken;
-		else
-			return readTokenFromFile();
-	}
-
-	private static String readTokenFromFile()
-	{
-		return readTokenFromFile(new File(".token"));
-	}
-
-	private static String readTokenFromFile(final File file)
-	{
-		try(final FileReader fileReader = new FileReader(file))
-		{
-			final BufferedReader bfReader = new BufferedReader(fileReader);
-			final String line = bfReader.readLine();
-			checkAccessTokenFormat(line);
-
-			return line;
-		}
-		catch(IOException e)
-		{
-			e.printStackTrace();
-			System.exit(1);
-		}
-
-		return "BadToken";
-	}
-
-	private static void checkAccessTokenFormat(String accessToken)
-	{
-		if(!accessToken.matches("[\\da-f]{40}"))
-		{
-			throw new IllegalArgumentException("Bad token format, expected hexadecimal token of length 40, but got: "
-					+ accessToken + " (length " + accessToken.length() + ")");
-		}
 	}
 
 	public boolean acceptsRequests()
@@ -117,7 +65,7 @@ public class Client
 			if(resourceCache.isCached(resource))
 				return resourceCache.getResponse(resource);
 
-		final RequestConsumer consumer = new RequestConsumer(accessToken, resource);
+		final RequestConsumer consumer = new RequestConsumer(token, resource);
 		Future<Response> response = threadPool.submit(consumer);
 
 		final boolean saveToCache = cache.resourcePolicy() != CachePolicy.NEVER;
@@ -135,7 +83,7 @@ public class Client
 			if(searchCache.isCached(query))
 				return searchCache.getResponse(query);
 
-		final RequestConsumer consumer = new RequestConsumer(accessToken, query);
+		final RequestConsumer consumer = new RequestConsumer(token, query);
 		Future<Response> response = threadPool.submit(consumer);
 
 		final boolean saveToCache = cache.searchPolicy() != CachePolicy.NEVER;
