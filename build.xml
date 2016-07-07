@@ -76,6 +76,7 @@
 
 <target name="javadoc" description="Compiles JavaDocs for this project" depends="init">
 	<javadoc packagenames="*" access="package" additionalparam="-link http://docs.oracle.com/javase/8/docs/api/ " author="false" sourcepath="src" destdir="${doc}" source="1.8">
+			<classpath refid="project.class.path" />
 	</javadoc>
 </target>
 
