@@ -31,6 +31,11 @@ public class Client
 		this(new AccessToken());
 		this.cache = cache;
 	}
+	
+	public Client()
+	{
+		this(new CacheSettings());
+	}
 
 	public boolean acceptsRequests()
 	{
