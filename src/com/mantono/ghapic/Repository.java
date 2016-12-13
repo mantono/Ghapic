@@ -2,14 +2,26 @@ package com.mantono.ghapic;
 
 public class Repository
 {
+	private final int id;
 	private final String owner, name;
 	
 	public Repository(final String owner, final String name)
 	{
+		this(owner, name, -1);
+	}
+
+	public Repository(String owner, String name, int id)
+	{
 		this.owner = owner;
 		this.name = name;
+		this.id = id;
 	}
 	
+	public int getId()
+	{
+		return id;
+	}
+
 	public String getOwner()
 	{
 		return owner;
