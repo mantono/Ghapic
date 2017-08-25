@@ -34,9 +34,9 @@ public class RequestConsumer implements Callable<Response>
 			connection.setRequestProperty("User-Agent", "ghapic");
 			connection.setRequestProperty("Accept", "application/vnd.github.v3.text+json");
 			connection.setDoOutput(true);
-			
+
 			connection.connect();
-			
+
 			final Map<String, List<String>> header = extractHeader(connection);
 			final JsonNode body = parseBody(connection);
 			return new Response(header, body);
@@ -50,20 +50,13 @@ public class RequestConsumer implements Callable<Response>
 		}
 	}
 
-	private JsonNode parseBody(HttpsURLConnection connection)
+	private JsonNode parseBody(HttpsURLConnection connection) throws IOException
 	{
-		
-		try(InputStream input = connection.getInputStream();)
-		{
-			final ObjectMapper mapper = new ObjectMapper();
-			final JsonNode node = mapper.readTree(input);
-			return node;
-		}
-		catch(IOException e)
-		{
-			e.printStackTrace();
-		}
-		return null;
+
+		InputStream input = connection.getInputStream();
+		final ObjectMapper mapper = new ObjectMapper();
+		final JsonNode node = mapper.readTree(input);
+		return node;
 	}
 
 	private Map<String, List<String>> extractHeader(HttpsURLConnection connection)
