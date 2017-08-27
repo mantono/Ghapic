@@ -33,7 +33,7 @@ public class Search implements Request
 	}
 
 	@Override
-	public URL getUrl()
+	public URL getResource()
 	{
 		try
 		{

@@ -28,7 +28,7 @@ public class RequestConsumer implements Callable<Response>
 		HttpsURLConnection connection = null;
 		try
 		{
-			connection = (HttpsURLConnection) request.getUrl().openConnection();
+			connection = (HttpsURLConnection) request.getResource().openConnection();
 			connection.setRequestMethod(request.getMethod().name());
 			connection.setRequestProperty("Authorization", "token " + accessToken.getToken());
 			connection.setRequestProperty("User-Agent", "ghapic");

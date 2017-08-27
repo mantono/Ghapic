@@ -3,8 +3,8 @@ package com.mantono.ghapic;
 import java.io.Serializable;
 import java.net.URL;
 
-public interface Request extends Serializable
+interface Request: Serializable
 {
-	Verb getMethod();
-	URL getUrl();
+	val method: Verb
+	val resource: URL
 }
