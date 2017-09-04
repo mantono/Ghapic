@@ -23,7 +23,7 @@ fun isValidFormat(accessToken: String): Boolean = accessToken.matches(TOKEN_REGE
 private fun findAccessToken(): String = System.getenv(ENV_VARIABLE) ?: readTokenFromFile()
 private fun readTokenFromFile(): String = readTokenFromFile(File(".token"))
 
-private fun readTokenFromFile(file: File): String
+fun readTokenFromFile(file: File): String
 {
 	return try
 	{

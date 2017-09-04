@@ -17,9 +17,7 @@ class WorkManager(corePoolSize: Int = 4,
 	private var resetTime: Instant = Instant.now()
 	private var searchResetTime: Instant = Instant.now()
 	private var remainingRequests: Int = HOURLY_RATE
-		get
 	private var remainingSearchRequests: Int = MINUTE_SEARCH_RATE
-		get
 
 	override fun beforeExecute(t: Thread, r: Runnable)
 	{
@@ -97,4 +95,7 @@ class WorkManager(corePoolSize: Int = 4,
 	{
 		this.searchResetTime = Instant.ofEpochSecond(time)
 	}
+
+	fun remainingRequests(): Int = remainingRequests
+	fun remainingSearchRequests(): Int = remainingSearchRequests
 }
