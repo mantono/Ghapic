@@ -36,6 +36,8 @@ dependencies {
     compile group: 'org.jetbrains.kotlin', name: 'kotlin-stdlib-jre8', version: kotlin_version
     compile group: 'org.jetbrains.kotlinx', name: 'kotlinx-coroutines-jdk8', version: '0.17'
     compile group: 'org.jetbrains.kotlinx', name: 'kotlinx-coroutines-core', version: '0.17'
+    compile 'com.fasterxml.jackson.core:jackson-core:2.9.0'
+    compile 'com.fasterxml.jackson.core:jackson-databind:2.9.0'
     testCompile 'org.junit.jupiter:junit-jupiter-api:5.0.0-M4'
     testRuntime 'org.junit.jupiter:junit-jupiter-engine:5.0.0-M4'
 }
