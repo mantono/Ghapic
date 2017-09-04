@@ -1,7 +1,5 @@
 package com.mantono.ghapic
 
-import java.io.IOException
-import java.net.MalformedURLException
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
@@ -27,7 +25,6 @@ class Client(private val token: AccessToken, val cache: CacheSettings = CacheSet
 		return submitRequest(Resource(Verb.GET, resource))
 	}
 
-	@Throws(MalformedURLException::class, IOException::class)
 	fun submitRequest(method: Verb, resource: String): Future<Response>
 	{
 		if (resource.matches("^/?search/".toRegex()))
@@ -35,17 +32,13 @@ class Client(private val token: AccessToken, val cache: CacheSettings = CacheSet
 		return submitRequest(Resource(method, resource))
 	}
 
-	@Throws(MalformedURLException::class, IOException::class)
-	fun submitRequest(type: SearchType, query: String): Future<Response>
-	{
-		return submitRequest(Search(type, query))
-	}
+	fun submitRequest(type: SearchType, query: String): Future<Response> = submitRequest(Search(type, query))
 
 	fun submitRequest(resource: Resource): Future<Response>
 	{
 		if (useResourceCache())
 			if (resourceCache.isCached(resource))
-				return resourceCache.cachedResponse(resource)
+				return resourceCache.cachedResponse(resource)!!
 
 		val consumer = RequestConsumer(token, resource)
 		val response = threadPool.submit(consumer)
@@ -63,7 +56,7 @@ class Client(private val token: AccessToken, val cache: CacheSettings = CacheSet
 	{
 		if(useSearchCache())
 			if(searchCache.isCached(query))
-				return searchCache.cachedResponse(query)
+				return searchCache.cachedResponse(query)!!
 
 		val consumer = RequestConsumer(token, query)
 		val response = threadPool.submit(consumer)
@@ -79,7 +72,7 @@ class Client(private val token: AccessToken, val cache: CacheSettings = CacheSet
 	private fun useResourceCache(): Boolean
 	{
 		val alwaysCache = cache.resourcePolicy == CachePolicy.ALWAYS
-		val cacheThresholdReached = cache.resourcePolicy == CachePolicy.THRESHOLD && threadPool.remainingResourceRequests() < cache.resourceThreshold
+		val cacheThresholdReached = cache.resourcePolicy == CachePolicy.THRESHOLD && threadPool.remainingRequests() < cache.resourceThreshold
 		return alwaysCache || cacheThresholdReached
 	}
 
