@@ -1,6 +1,6 @@
 package com.mantono.ghapic;
 
-public enum Verb
+enum class Verb
 {
 	GET, PUT, POST, DELETE;
 }
